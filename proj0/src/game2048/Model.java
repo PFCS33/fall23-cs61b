@@ -93,9 +93,21 @@ public class Model {
      * */
     public static boolean emptySpaceExists(Board b) {
         // TODO: Fill in this function.
+        int rowNum= b.size();
+        boolean result = false;
+        for (int i = 0; i < rowNum; i++)
+        {
+            for (int j = 0; j< rowNum; j++)
+            {
+                if (b.tile(i,j)==null)
+                {
+                   result = true;
+                   break;
+                }
+            }
+        }
 
-
-        return false;
+        return result;
     }
 
     /**
@@ -106,8 +118,22 @@ public class Model {
     public static boolean maxTileExists(Board b) {
         // TODO: Fill in this function.
 
+        int rowNum= b.size();
+        boolean result = false;
+        for (int i = 0; i < rowNum; i++)
+        {
+            for (int j = 0; j< rowNum; j++)
+            {
+                Tile t = b.tile(i,j);
+                if ( t != null && t.value() == MAX_PIECE)
+                {
+                    result = true;
+                    break;
+                }
+            }
+        }
 
-        return false;
+        return result;
     }
 
     /**
@@ -118,10 +144,79 @@ public class Model {
      */
     public static boolean atLeastOneMoveExists(Board b) {
         // TODO: Fill in this function.
-
-
-        return false;
+        boolean result = false;
+        if (emptySpaceExists(b) || hasTwoAdjacentSameTile(b))
+        {
+            result = true;
+        }
+        return result;
     }
+
+    public static boolean hasTwoAdjacentSameTile(Board b){
+        boolean result = false;
+        int rowNum = b.size();
+        for (int i = 0; !result && i < rowNum; i++)
+        {
+            for (int j = 0; !result && j < rowNum; j++ )
+            {
+                Tile currentTile = b.tile(i,j);
+                Tile[] neighborTiles= getNeighborTiles(b, currentTile);
+                for (Tile neighbor : neighborTiles)
+                {
+                    if(neighbor != null)
+                    {
+                        if (  neighbor.value() == currentTile.value())
+                        {
+                            result = true;
+                        }
+                    }
+
+                }
+            }
+        }
+        return result;
+    }
+
+    public static Tile[] getNeighborTiles(Board b, Tile t)
+    {
+        Tile[] result = new Tile[4];
+        int idx = 0;
+        int rowNum = b.size();
+        int row = t.row();
+        int col = t.col();
+
+        if(isValidIndex(rowNum, row+1))
+        {
+            result[idx] = b.tile(col, row+1);
+            idx++;
+        }
+
+        if(isValidIndex(rowNum, row-1))
+        {
+            result[idx] = b.tile(col, row-1);
+            idx++;
+        }
+        if(isValidIndex(rowNum, col+1))
+        {
+            result[idx] = b.tile(col+1, row);
+            idx++;
+        }
+        if(isValidIndex(rowNum, col-1))
+        {
+            result[idx] = b.tile(col-1, row);
+            idx++;
+        }
+        return result;
+
+    }
+
+    public static boolean isValidIndex(int maxIndex, int index)
+    {
+
+        return index< maxIndex && index >=0;
+    }
+
+
 
     /** Tilt the board toward SIDE.
      *
@@ -139,9 +234,83 @@ public class Model {
         // TODO: Modify this.board (and if applicable, this.score) to account
         // for the tilt to the Side SIDE.
 
+        // treat as if the direction is North
+
+        board.setViewingPerspective(side);
+        int size = board.size();
+        for (int colNumber=0; colNumber<size; colNumber++)
+        {
+            moveUpPerCol(colNumber);
+        }
 
         checkGameOver();
+        board.setViewingPerspective(Side.NORTH);
     }
+
+    public void moveUpPerCol(int colNumber)
+    {
+        int size = board.size();
+        int[] limitMergeIndex = new int[size];
+        // iterate from row size-1 down
+        for(int rowNumber =size-1; rowNumber>=0 ; rowNumber--)
+        {
+            Tile t = board.tile(colNumber, rowNumber);
+            if(t!= null)
+            {
+                int replacedRowNumber = getNextRow(t,colNumber,rowNumber);
+                if(replacedRowNumber!=-1)
+                {
+                    if(limitMergeIndex[replacedRowNumber] == 1)
+                    {
+                        board.move(colNumber, replacedRowNumber-1,t);
+                    }else{
+                        if(board.move(colNumber, replacedRowNumber,t))
+                        {
+                            limitMergeIndex[replacedRowNumber]=1;
+                            Tile mergedTile = board.tile(colNumber, replacedRowNumber);
+                            score += mergedTile.value();
+                        }
+                    }
+
+                }
+            }
+        }
+    }
+
+    public int getNextRow(Tile t, int col, int row){
+        int size = board.size();
+        int value = t.value();
+        int targetRow = row + 1;
+        boolean isEqual = false;
+//        System.out.println(row);
+        for(; targetRow<size; targetRow++)
+        {
+            Tile tTmp = board.tile(col, targetRow);
+            if(tTmp != null)
+            {
+                if(tTmp.value() == value)
+                {
+                    isEqual = true;
+                }
+                break;
+            }
+        }
+
+        if(!isEqual)
+        {
+            if(targetRow-1!= row)
+            {
+                targetRow-=1;
+            }else{
+                targetRow= -1;
+            }
+        }
+
+
+        return targetRow;
+
+    }
+
 
 
     @Override

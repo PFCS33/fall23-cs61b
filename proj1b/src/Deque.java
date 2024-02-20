@@ -6,6 +6,7 @@ import java.util.List;
  */
 public interface Deque<T> {
 
+
     /**
      * Add {@code x} to the front of the deque. Assumes {@code x} is never null.
      *
